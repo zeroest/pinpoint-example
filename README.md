@@ -120,3 +120,68 @@ nohup java -jar -Dpinpoint.zookeeper.address=localhost pinpoint-web-boot-2.2.2.j
 
 ---
 
+# Pinpoint Agent
+
+![pinpoint-diagram](./img/pinpoint-diagram.png)
+
+## Setup pinpoint agent
+
+```bash
+wget https://github.com/pinpoint-apm/pinpoint/releases/download/v2.2.2/pinpoint-agent-2.2.2.tar.gz
+
+tar xvzf pinpoint-agent-2.2.2.tar.gz
+
+vim pinpoint-agent-2.2.2/pinpoint-root.config
+
+# pinpoint collector ip로 수정한다.
+profiler.transport.grpc.collector.ip=pinpoint-collector-ip
+```
+
+ip 수정후 재압축하여 s3 업로드 한다.
+```bash
+mv pinpoint-agent-2.2.2 pinpoint-agent
+tar -zcvf pinpoint-agent.tar.gz pinpoint-agent
+
+https://app-config-file.s3.ap-northeast-2.amazonaws.com/pinpoint-agent.tar.gz
+```
+
+## Push application with agent ECR
+
+```bash 
+./gradlew agent1:jibDockerBuild
+./gradlew agent2:jibDockerBuild
+
+aws ecr get-login-password --region ap-northeast-2 | docker login --username AWS --password-stdin 225953240914.dkr.ecr.ap-northeast-2.amazonaws.com
+
+docker push 225953240914.dkr.ecr.ap-northeast-2.amazonaws.com/pinpoint-agent-one:latest
+docker push 225953240914.dkr.ecr.ap-northeast-2.amazonaws.com/pinpoint-agent-one:agent1-1660413368137
+
+docker push 225953240914.dkr.ecr.ap-northeast-2.amazonaws.com/pinpoint-agent-two:latest
+docker push 225953240914.dkr.ecr.ap-northeast-2.amazonaws.com/pinpoint-agent-two:agent2-1660413368137
+```
+
+## Run image
+
+```bash
+docker pull 225953240914.dkr.ecr.ap-northeast-2.amazonaws.com/pinpoint-agent-one:latest
+docker run -d --name agentone -p 80:10001 225953240914.dkr.ecr.ap-northeast-2.amazonaws.com/pinpoint-agent-one
+
+docker pull 225953240914.dkr.ecr.ap-northeast-2.amazonaws.com/pinpoint-agent-two:latest
+docker run -d --name agenttwo -p 80:10002 225953240914.dkr.ecr.ap-northeast-2.amazonaws.com/pinpoint-agent-two
+```
+
+### Agent One Application
+![agent-one-monitoring](./img/agent-one-monitoring.png)
+
+
+### Agent Two Application
+![agent-two-monitoring](./img/agent-two-monitoring.png)
+
+![agent-two-to-one-log](./img/agent-two-to-one-log.png)
+
+
+### Error example
+
+![agent-one-monitoring-error-example](./img/agent-one-monitoring-error-example.png)
+
+![agent-one-log-error-example](./img/agent-one-log-error-example.png)

@@ -1,0 +1,4 @@
+rootProject.name = 'app-agent'
+include 'agent1'
+include 'agent2'
+

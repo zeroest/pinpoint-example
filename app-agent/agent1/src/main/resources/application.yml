@@ -1,0 +1,4 @@
+
+pinpoint:
+  agent:
+    two: http://agent2

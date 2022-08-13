@@ -1,0 +1,73 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+
+    ext {
+        appVersion='0.0.0'
+        javaVersion='11'
+        springBootVersion="2.6.10"
+        springCloudVersion="2021.0.3"
+        springDependencyManagementVersion="1.0.12.RELEASE"
+        gradleDownloadVersion="5.1.1"
+        jibGradleVersion="3.2.1"
+    }
+
+    dependencies {
+        classpath "org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}"
+        classpath "io.spring.gradle:dependency-management-plugin:${springDependencyManagementVersion}"
+
+        classpath "gradle.plugin.com.google.cloud.tools:jib-gradle-plugin:${jibGradleVersion}"
+
+        // https://plugins.gradle.org/plugin/de.undercouch.download
+        classpath "de.undercouch:gradle-download-task:${gradleDownloadVersion}"
+    }
+}
+
+subprojects {
+    apply plugin: "org.springframework.boot"
+    apply plugin: "io.spring.dependency-management"
+    apply plugin: 'java'
+    apply plugin: "groovy"
+    apply plugin: 'maven'
+
+    project.group 'me.zeroest.pinpoint-example'
+    project.version "${appVersion}"
+
+    sourceCompatibility = javaVersion
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencyManagement{
+        // https://spring.io/projects/spring-cloud
+        imports {
+            mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+        }
+
+        dependencies {
+            dependencySet(group: "org.springframework.boot", version: "${springBootVersion}") {
+                entry "spring-boot-starter-web"
+                entry "spring-boot-starter-test"
+            }
+
+            dependencySet(group: "org.projectlombok", version: "1.18.22") {
+                entry "lombok"
+            }
+        }
+    }
+
+    dependencies {
+        implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.9'
+
+        compileOnly "org.projectlombok:lombok"
+        annotationProcessor 'org.projectlombok:lombok'
+
+        testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    }
+
+}

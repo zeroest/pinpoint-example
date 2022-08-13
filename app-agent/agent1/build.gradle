@@ -1,0 +1,66 @@
+apply plugin: "org.springframework.boot"
+apply plugin: "com.google.cloud.tools.jib"
+apply plugin: "de.undercouch.download"
+apply plugin: "java"
+
+project.version '0.0.0'
+
+ext.serverPort = '10001'
+ext.repositoryName = 'pinpoint-agent-one'
+
+dependencies {
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
+    implementation 'org.springframework.cloud:spring-cloud-starter-openfeign'
+}
+
+
+jib {
+    from {
+        image = 'adoptopenjdk/openjdk11'
+    }
+    to {
+        image = "225953240914.dkr.ecr.ap-northeast-2.amazonaws.com/${repositoryName}"
+        credHelper = 'ecr-login'
+        tags = [
+            'latest', "${project.name}-"+System.currentTimeMillis()
+        ]
+    }
+
+    container {
+        extraDirectories.paths = [file("${buildDir}/apm-agent")]
+        mainClass = "me.zeroest.pinpoint.example.agent1.AgentOneApplication"
+        creationTime = "USE_CURRENT_TIMESTAMP"
+        environment = [ "JAVA_TOOL_OPTIONS": "-Xmx2048m -XX:+UseG1GC", "TZ": "Asia/Seoul"]
+        ports = [serverPort]
+        labels = [maintainer: 'zeroest <husheart@naver.com>']
+        user = "root:root"
+        jvmFlags = [
+                "-XX:+UseContainerSupport", "-Dserver.port="+serverPort, "-Dfile.encoding=UTF-8",
+                "-javaagent:pinpoint-agent/pinpoint-bootstrap.jar",
+                // agentId: 같은 applicationName 내에서 각 서버들을 구분하는 ID
+//                "-Dpinpoint.agentId=${}",
+                "-Dpinpoint.applicationName=agent-one",
+                "-Dpinpoint.config=pinpoint-agent/pinpoint-root.config"
+        ]
+    }
+
+    allowInsecureRegistries true
+//    sendCredentialsOverHttp true
+}
+
+task downloadFile(type: Download) {
+    src "https://app-config-file.s3.ap-northeast-2.amazonaws.com/pinpoint-agent.tar.gz"
+    dest "${buildDir}/pinpoint-agent.tar.gz"
+}
+
+task extractFile(dependsOn: downloadFile, type: Copy) {
+    from tarTree(downloadFile.dest)
+    into "${buildDir}/apm-agent"
+}
+
+tasks.jib.dependsOn extractFile
+tasks.jibDockerBuild.dependsOn extractFile
+tasks.jibBuildTar.dependsOn extractFile
+
+defaultTasks 'jib'
