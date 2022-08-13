@@ -3,6 +3,8 @@
 
 https://github.com/pinpoint-apm/pinpoint
 
+![pinpoint-infra-tree](./img/pinpoint-infra-tree.png)
+
 ## Install java
 
 ```bash
