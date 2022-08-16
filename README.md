@@ -185,3 +185,25 @@ docker run -d --name agenttwo -p 80:10002 225953240914.dkr.ecr.ap-northeast-2.am
 ![agent-one-monitoring-error-example](./img/agent-one-monitoring-error-example.png)
 
 ![agent-one-log-error-example](./img/agent-one-log-error-example.png)
+
+---
+
+# Issue
+
+## [OOM by Metaspace](https://github.com/TASK-FORCE/mannalga-api/issues/354)
+
+> Spring Boot Gradle Plugin 으로 bootBuildImage Task를 사용하여 이미지를 빌드 할 경우,  
+> 클라우드 파운드리에 있는 [자바 빌드 메모리 계산기]로 휴리스틱하게 메모리 사용 예상치를 계산해서  
+> 그 값으로 LIMIT를 걸어버립니다. (heap, non-head 영역 모두)
+>
+> 빌드 시점에는 pinpoint 모니터링을 위한 pinpoint agent가 반영되어있지 않았고,  
+> javaagent로 pinpoint agent를 추가하여 가동할 경우 추가적인 메모리 사용으로 인해  
+> 예측된 양보다 많은 메모리를 사용해서 발생한 문제였습니다.
+>
+> non-heap 메모리 부분이 제한을 넘어서자, heap영역의 메모리가 다 차지도 않았는데  
+> jvm이 non-heap 영역의 메모리를 확보하기 위해 FULL GC  
+
+[Java Buildpack Memory Calculator](https://github.com/cloudfoundry/java-buildpack-memory-calculator)
+![calc-metaspace](./img/calc-metaspace.png)
+
+[Triggering of gc on Metaspace memory in java 8](https://stackoverflow.com/questions/44713423/triggering-of-gc-on-metaspace-memory-in-java-8)
